@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TempTracker Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        #chart-container { width: 90vw; max-width: 900px; margin: auto; }
+    </style>
+</head>
+<body>
+    <h1>TempTracker Dashboard</h1>
+    <div id="chart-container">
+        <canvas id="tempChart"></canvas>
+    </div>
+    <script>
+    async function fetchData() {
+        const response = await fetch('/data');
+        return await response.json();
+    }
+
+    async function renderChart() {
+        const data = await fetchData();
+        // Placeholder: just log the data for now
+        console.log(data);
+        // TODO: Process and plot data using Chart.js
+        // Example: plot temperature for the first sensor
+        const labels = data.map(row => row.sensor_time);
+        const temps = data.map(row => row.temp_c);
+        const ctx = document.getElementById('tempChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Temperature (C)',
+                    data: temps,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    fill: false,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { display: true, title: { display: true, text: 'Time' } },
+                    y: { display: true, title: { display: true, text: 'Temperature (C)' } }
+                }
+            }
+        });
+    }
+
+    renderChart();
+    </script>
+</body>
+</html> 
