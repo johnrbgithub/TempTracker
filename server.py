@@ -1,6 +1,7 @@
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, request
 import sqlite3
 import os
+import subprocess
 
 app = Flask(__name__, static_folder='static')
 DB_FILE = 'tempstick_data.db'
@@ -25,5 +26,5 @@ def static_proxy(path):
     return send_from_directory(app.static_folder, path)
 
 if __name__ == '__main__':
-    # Listen on all interfaces for LAN access
-    app.run(host='0.0.0.0', port=5000, debug=True) 
+    # Listen on all interfaces for LAN access, use port 5050
+    app.run(host='0.0.0.0', port=5050, debug=True) 

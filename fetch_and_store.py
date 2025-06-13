@@ -5,9 +5,10 @@ import os
 import gzip
 import io
 from datetime import datetime, timedelta
+import sys
 
 API_KEY = '67b10d1f7a446a36c8346670abb1a6b3ac2185ffffbc16374e'  # Replace with your actual API key
-API_READINGS_URL = 'https://tempstickapi.com/api/v1/sensor/{}/readings?setting=custom&start={}&end={}&offset={}'
+API_READINGS_URL = 'https://tempstickapi.com/api/v1/sensor/{}/readings?setting={}&offset={}'
 SENSORS_FILE = 'sensors.json'
 DB_FILE = 'tempstick_data.db'
 # Phoenix, AZ is UTC-7 year-round, so offset is -25200 seconds
@@ -25,25 +26,24 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             sensor_number INTEGER,
             sensor_id INTEGER,
-            temp_c REAL,
+            temperature REAL,
             humidity REAL,
             voltage REAL,
             rssi INTEGER,
             time_to_connect INTEGER,
             sensor_time TEXT,
-            last_checkin TEXT,
             fetched_at TEXT
         )
     ''')
     conn.commit()
     return conn
 
-def fetch_sensor_readings(sensor_id, start_date, end_date, offset):
+def fetch_sensor_readings(sensor_id, setting, offset):
     headers = {
         'X-API-KEY': API_KEY,
         'Accept-Encoding': 'gzip'
     }
-    url = API_READINGS_URL.format(sensor_id, start_date, end_date, offset)
+    url = API_READINGS_URL.format(sensor_id, setting, offset)
     response = requests.get(url, headers=headers, stream=True)
     if response.status_code == 200:
         # Try plain JSON first
@@ -74,34 +74,32 @@ def fetch_sensor_readings(sensor_id, start_date, end_date, offset):
         print(f"Failed to fetch readings for sensor {sensor_id}: {response.status_code}")
         return []
 
-def store_reading(conn, sensor_number, sensor_id, temp_c, humidity, voltage, rssi, time_to_connect, sensor_time, last_checkin):
+def store_reading(conn, sensor_number, sensor_id, temperature, humidity, voltage, rssi, time_to_connect, sensor_time):
     c = conn.cursor()
     c.execute('''
-        INSERT INTO readings (sensor_number, sensor_id, temp_c, humidity, voltage, rssi, time_to_connect, sensor_time, last_checkin, fetched_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (sensor_number, sensor_id, temp_c, humidity, voltage, rssi, time_to_connect, sensor_time, last_checkin, datetime.utcnow().isoformat()))
+        INSERT INTO readings (sensor_number, sensor_id, temperature, humidity, voltage, rssi, time_to_connect, sensor_time, fetched_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (sensor_number, sensor_id, temperature, humidity, voltage, rssi, time_to_connect, sensor_time, datetime.utcnow().isoformat()))
     conn.commit()
 
 def main():
     sensors = load_sensors()
     conn = init_db()
-    end_date = datetime.utcnow().date()
-    start_date = end_date - timedelta(days=5)
+    setting = sys.argv[1] if len(sys.argv) > 1 else 'this_week'
     for sensor in sensors:
-        readings = fetch_sensor_readings(sensor['id'], start_date.isoformat(), end_date.isoformat(), PHOENIX_UTC_OFFSET)
+        readings = fetch_sensor_readings(sensor['id'], setting, PHOENIX_UTC_OFFSET)
         for reading in readings:
             if not isinstance(reading, dict):
                 print('Warning: Skipping non-dict reading:', reading)
                 continue
-            temp_c = reading.get('temperature')
+            temperature = reading.get('temperature')
             humidity = reading.get('humidity')
             voltage = reading.get('voltage')
             rssi = reading.get('rssi')
             time_to_connect = reading.get('time_to_connect')
             sensor_time = reading.get('sensor_time')
-            last_checkin = sensor_time  # For compatibility, use sensor_time as last_checkin
-            if temp_c is not None and humidity is not None and sensor_time is not None:
-                store_reading(conn, sensor['number'], sensor['id'], temp_c, humidity, voltage, rssi, time_to_connect, sensor_time, last_checkin)
+            if temperature is not None and humidity is not None and sensor_time is not None:
+                store_reading(conn, sensor['number'], sensor['id'], temperature, humidity, voltage, rssi, time_to_connect, sensor_time)
         print(f"Stored {len(readings)} readings for sensor {sensor['number']} (ID: {sensor['id']})")
     conn.close()
 

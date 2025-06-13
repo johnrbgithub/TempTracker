@@ -3,57 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TempTracker Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 2em; }
-        #chart-container { width: 90vw; max-width: 900px; margin: auto; }
-    </style>
+    <title>X6 Environment Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Jura:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <h1>TempTracker Dashboard</h1>
+    <h1>X6 Environment Tracker</h1>
+    <div class="panel" id="setting-panel">
+        <label for="setting-select"><b>Time Range:</b></label>
+        <select id="setting-select">
+            <option value="today">Today</option>
+            <option value="24_hours" selected>Last 24 Hours</option>
+            <option value="yesterday">Yesterday</option>
+            <option value="last_week">Last Week</option>
+            <option value="7_days">Last 7 Days</option>
+            <option value="this_week">This Week</option>
+            <option value="this_month">This Month</option>
+            <option value="30_days">Last 30 Days</option>
+            <option value="last_month">Last Month</option>
+            <option value="three_months">Last 3 Months</option>
+        </select>
+    </div>
+    <div class="panel" id="sensor-panel">
+        <div class="checkbox-group" id="sensor-checkboxes"></div>
+    </div>
+    <div class="panel" id="series-panel">
+        <div class="checkbox-group" id="series-checkboxes"></div>
+        <div class="toggle">
+            <label><input type="radio" name="unit" value="c" checked>°C</label>
+            <label><input type="radio" name="unit" value="f">°F</label>
+        </div>
+    </div>
     <div id="chart-container">
         <canvas id="tempChart"></canvas>
+        <div class="last-updated" id="last-updated"></div>
     </div>
-    <script>
-    async function fetchData() {
-        const response = await fetch('/data');
-        return await response.json();
-    }
-
-    async function renderChart() {
-        const data = await fetchData();
-        // Placeholder: just log the data for now
-        console.log(data);
-        // TODO: Process and plot data using Chart.js
-        // Example: plot temperature for the first sensor
-        const labels = data.map(row => row.sensor_time);
-        const temps = data.map(row => row.temp_c);
-        const ctx = document.getElementById('tempChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Temperature (C)',
-                    data: temps,
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    fill: false,
-                    tension: 0.1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: { display: true, title: { display: true, text: 'Time' } },
-                    y: { display: true, title: { display: true, text: 'Temperature (C)' } }
-                }
-            }
-        });
-    }
-
-    renderChart();
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/static/app.js"></script>
 </body>
 </html> 
